@@ -1,0 +1,21 @@
+{
+  "name": "shopping-list2",
+  "version": "1.0.0",
+  "description": "A shopping list app to demonstrate the use of Node.js, express, CRUD functions, and RESTful API's",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Node.js",
+    "express",
+    "CRUD",
+    "REST"
+  ],
+  "author": "David",
+  "license": "ISC",
+  "dependencies": {
+    "body-parser": "^1.15.2",
+    "express": "^4.14.0"
+  }
+}
