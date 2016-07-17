@@ -1,60 +1,65 @@
-var express = require('express');
-var bodyParser = require('body-parser');
+'use strict';
 
-var jsonParser = bodyParser.json();
+let express = require('express');
 
-var Storage = function () {
-    this.items = [];
-    this.id = 0;
-};
+class Storage {
+    constructor() {
+        this.items = [];
+        this.id = 1;
+    }
 
-Storage.prototype.add = function (name) {
-    var item = { name: name, id: this.id };
-    this.items.push(item);
-    this.id += 1;
-    return item;
-};
+    add(name) {
+        let item = { name: name, id: this.id };
+        this.items.push(item);
+        this.id += 1;
+        return item;
+    }
 
-// Method to delete an item from the list
-Storage.prototype.del = function (id) {
-    // Find the index of the item in the array
-    var index = this.items.findIndex(getIndex(id));
-    // Get the item
-    var item = this.items[index];
-    // Remove the item
-    this.items.splice(index, 1);
-    return item;
-};
-
-// Method to update an item in the list
-Storage.prototype.put = function (name, id) {
-    // Find the index of the item in the array
-    var index = this.items.findIndex(getIndex(id));
-    // Get the item
-    var item = this.items[index];
-    // Update the name attribute
-    item.name = name;
-    return item;
-};
-
-// Helper function - Good time to use a closure?
-// I need to find the index of the item object stored in the array
-// so I can remove the item or update the attributes.
-function getIndex(id) {
-    return function (item, index, array) {
-        if (item.id == id) {
-            return index;
+    getIndex(id) {
+        return function findId(item, index, array) {
+            return item.id == id;
         }
-    };
+    }
+
+    del(id) {
+        // Find the index of the item in the array
+        let index = this.items.findIndex(this.getIndex(id));
+        // Get the item
+        let item = this.items[index];
+        // Remove the item
+        this.items.splice(index, 1);
+        return item;
+    }
+
+    put(name, id) {
+        // Find the index of the item in the array
+        let index = this.items.findIndex(this.getIndex(id));
+        if (index < 0) {
+            return undefined;
+        }
+        // Get the item
+        let item = this.items[index];
+        // Update the name attribute
+        item.name = name;
+        return item;
+    }
+
 };
 
-var storage = new Storage();
+let storage = new Storage();
 storage.add('Broad beans');
 storage.add('Tomatoes');
 storage.add('Peppers');
 
-var app = express();
+let app = express();
 app.use(express.static('public'));
+
+// This is how I understand the documentation vs. the instructions
+// Rather than using another parameter in each method call
+// i.e., app.post('/items', bodyParser.json(), function(req, res) ...),
+// the parser is added to the express server instance.
+let bodyParser = require('body-parser');
+app.use(bodyParser.json());
 
 // Retrieve and send the list of items
 app.get('/items', function (req, res) {
@@ -62,42 +67,67 @@ app.get('/items', function (req, res) {
 });
 
 // Add a new item to the list
-app.post('/items', jsonParser, function (req, res) {
-    if (!req.body) {
-        return res.sendStatus(400);
+app.post('/items', function (req, res) {
+    // Provided as an example but doesn't work for me
+    // I had to include the specific property
+    if (!req.body.name) {
+        return res.status(400).json('The item you entered is blank');
     }
 
-    var item = storage.add(req.body.name);
+    let item = storage.add(req.body.name);
     res.status(201).json(item);
 });
 
 // Remove the selected item from the list
 app.delete('/items/:id', function (req, res) {
-    var idnum = req.params.id;
-
-    if (!storage.items.id === idnum) {
-        return res.status(400).json('Cannot delete requested item');
+    let id = req.params.id;
+    // The error handling is complicated here since a missing
+    // parameter appears to be given a value of zero, therefore it
+    // deletes the first item, but reports a general error stating
+    // "Cannot DELETE /items/" which is close, but not exactly correct.
+    // Checking the id parameter to see if it's less than one
+    // and starting the id at one (see constructor above)
+    // prevents the unexpected delete action.
+    // Now how to make the error message more precise?
+    if (id < 1) {
+        return res.status(400).json('Missing item id number');
     }
 
-    var item = storage.del(idnum);
+    let item = storage.del(id);
+    // This error handling works
+    if (!item) {
+        return res.status(500).json('Cannot find the item you requested');
+    }
+
     res.status(200).json(item);
 
 });
 
 // Update the selected item in the list
-app.put('/items/:id', jsonParser, function (req, res) {
-    var id = req.params.id;
+app.put('/items/:id', function (req, res) {
+    let id = req.params.id;
+    let body = req.body;
 
-    if (!req.body) {
-        // Vincent, why doesn't this work?
-        return res.status(400).json('Big mistake buddy!');
-    } else if (!storage.items[id]) {
-        return res.status(400).json('Cannot update requested item');
+    // If the body is empty or one of the parameters is missing...
+    if (!body || !body.name || !body.id) {
+        return res.status(400).json('You forgot to include the item to update!');
     }
 
-    var item = storage.put(req.body.name, req.body.id);
+    let item = storage.put(req.body.name, req.body.id);
+
+    // If the item doesn't exist...
+    if (!item) {
+        return res.status(500).json("Cannot update an item not in the list");
+    }
+
     res.status(200).json(item);
 
-})
+});
+
+// Testing out the documented error handling function
+app.use(function(err, req, res, next) {
+  console.error(err.stack);
+  res.status(500).send('Big mistake buddy! You just wait until I get a hold of you!');
+});
 
 app.listen(process.env.PORT || 8080);
