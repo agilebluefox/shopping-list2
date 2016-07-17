@@ -58,6 +58,7 @@ app.use(express.static('public'));
 // Rather than using another parameter in each method call
 // i.e., app.post('/items', bodyParser.json(), function(req, res) ...),
 // the parser is added to the express server instance.
+// How does express know when to use it?
 let bodyParser = require('body-parser');
 app.use(bodyParser.json());
 
@@ -96,7 +97,8 @@ app.delete('/items/:id', function (req, res) {
     let item = storage.del(id);
     // This error handling works
     if (!item) {
-        return res.status(500).json('Cannot find the item you requested');
+        return res.status(500).json(
+            'Cannot find the item you requested');
     }
 
     res.status(200).json(item);
@@ -110,14 +112,16 @@ app.put('/items/:id', function (req, res) {
 
     // If the body is empty or one of the parameters is missing...
     if (!body || !body.name || !body.id) {
-        return res.status(400).json('You forgot to include the item to update!');
+        return res.status(400).json(
+            'You forgot to include the item to update!');
     }
 
     let item = storage.put(req.body.name, req.body.id);
 
     // If the item doesn't exist...
     if (!item) {
-        return res.status(500).json("Cannot update an item not in the list");
+        return res.status(500).json(
+            "Cannot update an item not in the list");
     }
 
     res.status(200).json(item);
@@ -125,9 +129,11 @@ app.put('/items/:id', function (req, res) {
 });
 
 // Testing out the documented error handling function
-app.use(function(err, req, res, next) {
-  console.error(err.stack);
-  res.status(500).send('Big mistake buddy! You just wait until I get a hold of you!');
+app.use(function (err, req, res, next) {
+    console.error(err.stack);
+    res.status(500).send(
+        'Big mistake buddy! You just wait until I get a hold of you!'
+    );
 });
 
 app.listen(process.env.PORT || 8080);
