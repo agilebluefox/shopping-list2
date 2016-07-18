@@ -210,6 +210,15 @@
                 items: this.items
             };
 
+            /**
+             * The following sets the template property created
+             * in the shopping list instance and inserts the new
+             * context object which is compiled into HTML by
+             * Handlebars. The targeted ul content is replaced
+             * with the new HTML. Since the replaceWith method
+             * returns the object that was replaced, the last line
+             * is used to set the instance ul to the new object.
+             */
             let itemList = $(this.itemListTemplate(context));
             this.itemList.replaceWith(itemList);
             this.itemList = itemList;
