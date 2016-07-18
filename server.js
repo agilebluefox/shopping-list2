@@ -2,6 +2,14 @@
 
 let express = require('express');
 
+class User {
+    constructor(name) {
+        // Every user needs a name
+        this.username = name;
+    }
+
+};
+
 class Storage {
     constructor() {
         this.items = [];
@@ -15,7 +23,9 @@ class Storage {
         return item;
     }
 
-    getIndex(id) {
+    // Helper function that gets the index of the requested item
+    // in the items array for updating or deleting the item.
+    static getIndex(id) {
         return function findId(item, index, array) {
             return item.id == id;
         }
@@ -23,7 +33,10 @@ class Storage {
 
     del(id) {
         // Find the index of the item in the array
-        let index = this.items.findIndex(this.getIndex(id));
+        let index = this.items.findIndex(Storage.getIndex(id));
+        if (index < 0) {
+            return undefined;
+        }
         // Get the item
         let item = this.items[index];
         // Remove the item
@@ -33,7 +46,7 @@ class Storage {
 
     put(name, id) {
         // Find the index of the item in the array
-        let index = this.items.findIndex(this.getIndex(id));
+        let index = this.items.findIndex(Storage.getIndex(id));
         if (index < 0) {
             return undefined;
         }
@@ -46,10 +59,13 @@ class Storage {
 
 };
 
+let user = new User("joe");
 let storage = new Storage();
 storage.add('Broad beans');
 storage.add('Tomatoes');
 storage.add('Peppers');
+
+user.list = storage.items;
 
 let app = express();
 app.use(express.static('public'));
@@ -65,6 +81,12 @@ app.use(bodyParser.json());
 // Retrieve and send the list of items
 app.get('/items', function (req, res) {
     res.json(storage.items);
+});
+
+// Retrieve the user and the list
+app.get('/users/:name', function (req, res) {
+    let username = req.params.name;
+    res.json(user);
 });
 
 // Add a new item to the list
@@ -126,6 +148,12 @@ app.put('/items/:id', function (req, res) {
 
     res.status(200).json(item);
 
+});
+
+app.put('/users/:name', function (req, res) {
+    let username = req.params.name;
+    user.username = username;
+    res.status(200).json(user);
 });
 
 // Testing out the documented error handling function
