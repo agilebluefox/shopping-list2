@@ -103,7 +103,7 @@ app.post('/items', function (req, res) {
 
 // Remove the selected item from the list
 app.delete('/items/:id', function (req, res) {
-    let body = req.body;
+    let id = req.params.id;
     // The error handling is complicated here since a missing
     // parameter appears to be given a value of zero, therefore it
     // deletes the first item, but reports a general error stating
@@ -112,11 +112,11 @@ app.delete('/items/:id', function (req, res) {
     // and starting the id at one (see constructor above)
     // prevents the unexpected delete action.
     // Now how to make the error message more precise?
-    if (body.id < 1) {
+    if (id < 1) {
         return res.status(400).json('Missing item id number');
     }
 
-    let item = storage.del(body.id);
+    let item = storage.del(id);
     // This error handling works
     if (!item) {
         return res.status(400).json(
